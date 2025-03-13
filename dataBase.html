@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Datenbank Anwendung</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 800px;
+      background: #fff;
+      padding: 20px;
+      margin: auto;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    textarea {
+      resize: vertical;
+    }
+    .full-width {
+      grid-column: 1 / -1;
+    }
+    .buttons {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .buttons button {
+      background: #007BFF;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .buttons button:hover {
+      background: #0056b3;
+    }
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 14px;
+      color: #777;
+    }
+
+    .data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+.data-table th, .data-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+.data-table th {
+  background-color: #007BFF;
+  color: white;
+}
+.data-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+.data-table th, .data-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+.data-table th {
+  background-color: #007BFF;
+  color: white;
+}
+.data-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Datenbank Anwendung</h1>
+    <form id="databaseForm">
+      <div>
+        <label for="kunde">Kunde</label>
+        <input type="text" id="kunde" placeholder="Kunde">
+      </div>
+      <div>
+        <label for="auftrag">Auftrag</label>
+        <input type="text" id="auftrag" placeholder="Auftrag">
+      </div>
+      <div>
+        <label for="sapnr">SAPNr</label>
+        <input type="text" id="sapnr" placeholder="SAPNr">
+      </div>
+      <div>
+        <label for="projektkontext">ProjektKontext</label>
+        <input type="text" id="projektkontext" placeholder="ProjektKontext">
+      </div>
+      <div>
+        <label for="version">Version</label>
+        <input type="text" id="version" placeholder="Version">
+      </div>
+      <div>
+        <label for="bemerkungen">Bemerkungen</label>
+        <textarea id="bemerkungen" rows="3" placeholder="Bemerkungen"></textarea>
+      </div>
+      <div class="full-width">
+        <label for="hinweise">Hinweise</label>
+        <textarea id="hinweise" rows="2" placeholder="Hinweise"></textarea>
+      </div>
+    </form>
+
+    <div class="buttons">
+      <button onclick="newDatabase()">Neue Datenbank</button>
+      <button onclick="saveDatabase()">Speichern</button>
+      <button onclick="openDatabase()">Öffnen</button> <!-- زر فتح قاعدة بيانات -->
+      <button onclick="deleteDatabase()">Löschen</button>
+      <button onclick="modifyDatabase()">Ändern</button>
+      <button onclick="printDatabase()">Drucken</button>
+    </div>
+    
+    <!-- جدول لعرض البيانات بعد الفتح -->
+    <table id="dataTable" class="data-table">
+      <thead>
+        <tr>
+          <th>Kunde</th>
+          <th>Auftrag</th>
+          <th>SAPNr</th>
+          <th>ProjektKontext</th>
+          <th>Version</th>
+          <th>Bemerkungen</th>
+          <th>Hinweise</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- سيتم ملء هذا الجدول عند فتح ملف -->
+      </tbody>
+    </table>
+    
+    <footer>
+      Entwickler: Mohammad Almhanna | Email: mohannam66@gmail.com | Alle Rechte vorbehalten 2025
+    </footer>
+  </div>
+
+  <script>
+    // Überprüfen ob Node.js Module verfügbar sind (Electron-Umgebung)
+    let fs, path;
+    if (typeof require !== 'undefined') {
+      try {
+        fs = require('fs');
+        path = require('path');
+      } catch (e) {
+        console.warn("Node.js Module nicht verfügbar. Einige Funktionen stehen nur in Electron zur Verfügung.");
+      }
+    }
+
+    // Funktion zum Erstellen einer neuen Datenbank (Formular zurücksetzen)
+    function newDatabase() {
+      document.getElementById('databaseForm').reset();
+    }
+
+    // Funktion zum Speichern der Datenbank
+    function saveDatabase() {
+      var data =
+        "Kunde: " + document.getElementById('kunde').value + "\n" +
+        "Auftrag: " + document.getElementById('auftrag').value + "\n" +
+        "SAPNr: " + document.getElementById('sapnr').value + "\n" +
+        "ProjektKontext: " + document.getElementById('projektkontext').value + "\n" +
+        "Version: " + document.getElementById('version').value + "\n" +
+        "Bemerkungen: " + document.getElementById('bemerkungen').value + "\n" +
+        "Hinweise: " + document.getElementById('hinweise').value;
+
+      var databaseName = prompt("Bitte geben Sie einen Namen für die Datenbank ein:", "MeineDatenbank");
+      if (!databaseName) {
+        alert("Datenbankname ist erforderlich!");
+        return;
+      }
+
+      if (fs && path) {
+        // Pfad zum Speichern der Datenbank (anpassen nach Bedarf)
+        const folder = "E:\Neuer Ordner (3)";
+        if (!fs.existsSync(folder)) {
+          fs.mkdirSync(folder, { recursive: true });
+        }
+        let filePath = path.join(folder, databaseName + ".txt");
+        fs.writeFile(filePath, data, function(err) {
+          if (err) {
+            alert("Fehler beim Speichern der Datenbank: " + err);
+          } else {
+            alert("Datenbank erfolgreich gespeichert unter: " + filePath);
+          }
+        });
+      } else {
+        // Fallback für Web: Erstellen und Herunterladen einer TXT-Datei
+        var blob = new Blob([data], { type: "text/plain;charset=utf-8" });
+        var link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = databaseName + ".txt";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        alert("Datenbank wurde als Datei heruntergeladen.");
+      }
+    }
+
+    // Funktion zum Löschen einer bestehenden Datenbank
+    function deleteDatabase() {
+      var databaseName = prompt("Bitte geben Sie den Namen der zu löschenden Datenbank ein:", "MeineDatenbank");
+      if (!databaseName) {
+        alert("Datenbankname ist erforderlich!");
+        return;
+      }
+      if (fs && path) {
+        const folder = "C:/MeineDatenbanken";
+        let filePath = path.join(folder, databaseName + ".txt");
+        if (fs.existsSync(filePath)) {
+          fs.unlink(filePath, function(err) {
+            if (err) {
+              alert("Fehler beim Löschen der Datenbank: " + err);
+            } else {
+              alert("Datenbank erfolgreich gelöscht.");
+            }
+          });
+        } else {
+          alert("Die angegebene Datenbank existiert nicht.");
+        }
+      } else {
+        alert("Löschfunktion ist nur in der Electron-Anwendung verfügbar.");
+      }
+    }
+
+    // Funktion zum Ändern (Modifizieren) einer bestehenden Datenbank
+    function modifyDatabase() {
+      var databaseName = prompt("Bitte geben Sie den Namen der zu ändernden Datenbank ein:", "MeineDatenbank");
+      if (!databaseName) {
+        alert("Datenbankname ist erforderlich!");
+        return;
+      }
+      var data =
+        "Kunde: " + document.getElementById('kunde').value + "\n" +
+        "Auftrag: " + document.getElementById('auftrag').value + "\n" +
+        "SAPNr: " + document.getElementById('sapnr').value + "\n" +
+        "ProjektKontext: " + document.getElementById('projektkontext').value + "\n" +
+        "Version: " + document.getElementById('version').value + "\n" +
+        "Bemerkungen: " + document.getElementById('bemerkungen').value + "\n" +
+        "Hinweise: " + document.getElementById('hinweise').value;
+
+      if (fs && path) {
+        const folder = "C:/MeineDatenbanken";
+        let filePath = path.join(folder, databaseName + ".txt");
+        if (fs.existsSync(filePath)) {
+          fs.writeFile(filePath, data, function(err) {
+            if (err) {
+              alert("Fehler beim Ändern der Datenbank: " + err);
+            } else {
+              alert("Datenbank erfolgreich geändert.");
+            }
+          });
+        } else {
+          alert("Die angegebene Datenbank existiert nicht.");
+        }
+      } else {
+        alert("Änderungsfunktion ist nur in der Electron-Anwendung verfügbar.");
+      }
+    }
+
+    // Funktion zum Drucken der aktuellen Seite
+    function printDatabase() {
+      window.print();
+    }
+    function openDatabase() {
+  // فتح نافذة اختيار ملف
+  let fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.accept = ".txt";
+  fileInput.onchange = function (event) {
+    let file = event.target.files[0];
+    if (!file) return;
+
+    let reader = new FileReader();
+    reader.onload = function (e) {
+      let fileContent = e.target.result;
+      displayData(fileContent);
+    };
+    reader.readAsText(file);
+  };
+  fileInput.click();
+}
+
+// وظيفة لتحليل البيانات وعرضها داخل الجدول
+function displayData(fileContent) {
+  let tableBody = document.querySelector("#dataTable tbody");
+  tableBody.innerHTML = ""; // مسح أي بيانات قديمة
+
+  // تقسيم الملف إلى أسطر
+  let lines = fileContent.split("\n");
+  let rowData = [];
+
+  lines.forEach(line => {
+    let parts = line.split(": ");
+    if (parts.length === 2) {
+      rowData.push(parts[1].trim());
+    }
+  });
+
+  // التأكد من وجود بيانات كافية لملء الجدول
+  if (rowData.length >= 7) {
+    let newRow = `<tr>
+      <td>${rowData[0]}</td>
+      <td>${rowData[1]}</td>
+      <td>${rowData[2]}</td>
+      <td>${rowData[3]}</td>
+      <td>${rowData[4]}</td>
+      <td>${rowData[5]}</td>
+      <td>${rowData[6]}</td>
+    </tr>`;
+    tableBody.innerHTML = newRow;
+  } else {
+    alert("Fehler: Die Datei enthält nicht genügend Daten!"); // ملف غير صالح
+  }
+}
+  </script>
+</body>
+
+<script src="renderer.js"></script> 
+</html>
+
+
+
